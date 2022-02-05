@@ -11,6 +11,7 @@ SET_RGB_TOPIC = "rpi-0-w/tv-ambilight/setRGB"
 GET_RGB_TOPIC = "rpi-0-w/tv-ambilight/getRGB"
 GET_ON_TOPIC = "rpi-0-w/tv-ambilight/getOn"
 SET_ON_TOPIC = "rpi-0-w/tv-ambilight/setOn"
+STARTUP_TOPIC = "rpi-0-w/tv-ambilight/startup"
 PAYLOAD_ENCODING = "utf-8"
 STATE_FILE_NAME = "state.json"
 ON_TOPIC_LIGHT_ON = "true"
@@ -33,6 +34,7 @@ LED_CHANNEL = 0
 # Variables
 strip = None
 client = None
+ingore_rgb_msg = False
 
 
 def apply_color(r: str, g: str, b: str):
@@ -94,11 +96,17 @@ def on_connect(client, userdata, flags, rc):
     # reconnect then subscriptions will be renewed.
     client.subscribe(SET_RGB_TOPIC)
     client.subscribe(SET_ON_TOPIC)
+    client.subscribe(STARTUP_TOPIC)
     publish_state(read_state())
 
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+    global ingore_rgb_msg
+    if msg.topic == STARTUP_TOPIC:
+        logging.debug("Received Stratup: " + str(msg.payload))
+        ingore_rgb_msg = True
+
     if msg.topic == SET_ON_TOPIC:
         logging.debug("Received SetON: " + str(msg.payload))
         payload = msg.payload.decode(PAYLOAD_ENCODING)
@@ -110,18 +118,22 @@ def on_message(client, userdata, msg):
 
     if msg.topic == SET_RGB_TOPIC:
         logging.debug("Received SetRGB: " + str(msg.payload))
-        color_components = msg.payload.decode(PAYLOAD_ENCODING).split(",")
         state = read_state()
-        r = int(color_components[0])
-        g = int(color_components[1])
-        b = int(color_components[2])
-        if r == 0 and g == 0 and b == 0:
-            state[STATE_KEY_ON] = False
+        if not ingore_rgb_msg:
+            color_components = msg.payload.decode(PAYLOAD_ENCODING).split(",")
+            r = int(color_components[0])
+            g = int(color_components[1])
+            b = int(color_components[2])
+            if r == 0 and g == 0 and b == 0:
+                state[STATE_KEY_ON] = False
+            else:
+                state[STATE_KEY_ON] = True
+                state[STATE_KEY_R] = r
+                state[STATE_KEY_G] = g
+                state[STATE_KEY_B] = b
         else:
-            state[STATE_KEY_ON] = True
-            state[STATE_KEY_R] = r
-            state[STATE_KEY_G] = g
-            state[STATE_KEY_B] = b
+            logging.info("SetRGB message ignored")
+            ingore_rgb_msg = False
         apply_state(state)
         write_state(state)
         publish_state(state)

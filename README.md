@@ -8,27 +8,34 @@ Here's a sample "Light bulb - RGB" configuration that is used in conjunction wit
 
 ```json
 {
-    "type": "lightbulb-RGB",
-    "name": "TV Ambilight",
-    "mqttPubOptions": {
-        "retain": false
-    },
-    "logMqtt": false,
-    "optimizePublishing": false,
-    "topics": {
-        "getRGB": "rpi-0-w/tv-ambilight/getRGB",
-        "setRGB": "rpi-0-w/tv-ambilight/setRGB",
-        "getOn": "rpi-0-w/tv-ambilight/getOn",
-        "setOn": "rpi-0-w/tv-ambilight/setOn"
-    },
-    "confirmationIndicateOffline": true,
-    "accessory": "mqttthing"
+  "type": "lightbulb-RGB",
+  "name": "TV Ambilight",
+  "mqttPubOptions": {
+    "retain": false
+  },
+  "logMqtt": false,
+  "optimizePublishing": false,
+  "topics": {
+    "getRGB": "rpi-0-w/tv-ambilight/getRGB",
+    "setRGB": "rpi-0-w/tv-ambilight/setRGB",
+    "getOn": "rpi-0-w/tv-ambilight/getOn",
+    "setOn": "rpi-0-w/tv-ambilight/setOn"
+  },
+  "startPub": [
+    {
+      "topic": "rpi-0-w/tv-ambilight/startup",
+      "message": "ready"
+    }
+  ],
+  "confirmationIndicateOffline": true,
+  "accessory": "mqttthing"
 }
 ```
 
 ## Developer Instructions
 
 **Install Requirements**
+
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -36,16 +43,19 @@ pip install -r requirements.txt
 ```
 
 **Freeze Requirements**
+
 ```bash
 pip freeze > requirements.txt
 ```
 
 **Install as Service**
+
 ```bash
 ./install.sh
 ```
 
 **View Serivce Logs**
+
 ```bash
 journalctl -u ws281x-mqttthing-client.service    # All Logs
 journalctl -u ws281x-mqttthing-client.service -b # Logs for current boot
