@@ -1,13 +1,11 @@
-# MQTT Doc: https://pypi.org/project/paho-mqtt/
-# LED Strip: https://github.com/rpi-ws281x/rpi-ws281x-python
-
 import json
 import os
+
 import paho.mqtt.client as mqtt
 from rpi_ws281x import Color, PixelStrip
 
 # Misc configuration
-RPI4_IP = "192.168.1.106"
+MQTT_HOSTNAME = "192.168.1.106"
 SET_RGB_TOPIC = "rpi-0-w/tv-ambilight/setRGB"
 GET_RGB_TOPIC = "rpi-0-w/tv-ambilight/getRGB"
 GET_ON_TOPIC = "rpi-0-w/tv-ambilight/getOn"
@@ -80,7 +78,8 @@ def apply_state(state):
 
 def publish_state(state):
     if state[STATE_KEY_ON]:
-        publish_rgb_msg(state[STATE_KEY_R], state[STATE_KEY_G], state[STATE_KEY_B])
+        publish_rgb_msg(state[STATE_KEY_R],
+                        state[STATE_KEY_G], state[STATE_KEY_B])
     else:
         publish_on_msg("false")
 
@@ -125,12 +124,14 @@ def on_message(client, userdata, msg):
         if r == 0 and g == 0 and b == 0:
             publish_on_msg("false")
         else:
-            publish_rgb_msg(state[STATE_KEY_R], state[STATE_KEY_G], state[STATE_KEY_B])
+            publish_rgb_msg(state[STATE_KEY_R],
+                            state[STATE_KEY_G], state[STATE_KEY_B])
 
 
 if __name__ == '__main__':
     # Create NeoPixel object with appropriate configuration.
-    strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+    strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ,
+                       LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     # Initialize the library (must be called once before other functions).
     strip.begin()
     # Wipe on init.
@@ -141,5 +142,6 @@ if __name__ == '__main__':
     client.on_connect = on_connect
     client.on_message = on_message
 
-    client.connect(RPI4_IP)
-    client.loop_forever(1.0, 1, True)  # Retry all connection attempts including the first one.
+    client.connect(MQTT_HOSTNAME)
+    # Retry all connection attempts including the first one.
+    client.loop_forever(1.0, 1, True)
