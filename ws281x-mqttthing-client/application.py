@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 import paho.mqtt.client as mqtt
@@ -11,7 +12,9 @@ GET_RGB_TOPIC = "rpi-0-w/tv-ambilight/getRGB"
 GET_ON_TOPIC = "rpi-0-w/tv-ambilight/getOn"
 SET_ON_TOPIC = "rpi-0-w/tv-ambilight/setOn"
 PAYLOAD_ENCODING = "utf-8"
-STATE_FILE_NAME = "controller_state.json"
+STATE_FILE_NAME = "state.json"
+ON_TOPIC_LIGHT_ON = "true"
+ON_TOPIC_LIGHT_OFF = "false"
 
 STATE_KEY_ON = 'on'
 STATE_KEY_R = 'r'
@@ -27,8 +30,26 @@ LED_BRIGHTNESS = 255
 LED_INVERT = False
 LED_CHANNEL = 0
 
+# Variables
 strip = None
 client = None
+
+
+def apply_color(r: str, g: str, b: str):
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, Color(int(r), int(g), int(b)))
+    strip.show()
+
+
+def publish_rgb_msg(r: int, g: int, b: int):
+    payload = str(r) + "," + str(g) + "," + str(b)
+    logging.debug("Sending GetRGB: " + payload)
+    client.publish(GET_RGB_TOPIC, payload)
+
+
+def publish_on_msg(payload: str):
+    logging.debug("Sending GetON: " + payload)
+    client.publish(GET_ON_TOPIC, payload)
 
 
 def write_state(state):
@@ -51,24 +72,6 @@ def read_state():
         return default_state
 
 
-def apply_color(r, g, b):
-    """Wipe color across display a pixel at a time."""
-    for i in range(strip.numPixels()):
-        strip.setPixelColor(i, Color(int(r), int(g), int(b)))
-    strip.show()
-
-
-def publish_rgb_msg(r, g, b):
-    payload = str(r) + "," + str(g) + "," + str(b)
-    print("Sending GetRGB: " + payload)
-    client.publish(GET_RGB_TOPIC, payload)
-
-
-def publish_on_msg(payload):
-    print("Sending GetON: " + str(payload))
-    client.publish(GET_ON_TOPIC, payload)
-
-
 def apply_state(state):
     if state[STATE_KEY_ON]:
         apply_color(state[STATE_KEY_R], state[STATE_KEY_G], state[STATE_KEY_B])
@@ -78,14 +81,14 @@ def apply_state(state):
 
 def publish_state(state):
     if state[STATE_KEY_ON]:
-        publish_rgb_msg(state[STATE_KEY_R],
-                        state[STATE_KEY_G], state[STATE_KEY_B])
+        publish_on_msg(ON_TOPIC_LIGHT_ON)
+        publish_rgb_msg(state[STATE_KEY_R], state[STATE_KEY_G], state[STATE_KEY_B])
     else:
-        publish_on_msg("false")
+        publish_on_msg(ON_TOPIC_LIGHT_OFF)
 
 
 def on_connect(client, userdata, flags, rc):
-    print("Connected to MQTT server with result code: " + str(rc))
+    logging.info("Connected to MQTT server with result code: " + str(rc))
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -97,16 +100,16 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     if msg.topic == SET_ON_TOPIC:
-        print("Received SetON: " + str(msg.payload))
+        logging.debug("Received SetON: " + str(msg.payload))
         payload = msg.payload.decode(PAYLOAD_ENCODING)
         state = read_state()
-        state[STATE_KEY_ON] = payload == "true"
+        state[STATE_KEY_ON] = payload == ON_TOPIC_LIGHT_ON
         apply_state(state)
         write_state(state)
-        publish_on_msg(payload)
+        publish_state(state)
 
     if msg.topic == SET_RGB_TOPIC:
-        print("Received SetRGB: " + str(msg.payload))
+        logging.debug("Received SetRGB: " + str(msg.payload))
         color_components = msg.payload.decode(PAYLOAD_ENCODING).split(",")
         state = read_state()
         r = int(color_components[0])
@@ -121,17 +124,16 @@ def on_message(client, userdata, msg):
             state[STATE_KEY_B] = b
         apply_state(state)
         write_state(state)
-        if r == 0 and g == 0 and b == 0:
-            publish_on_msg("false")
-        else:
-            publish_rgb_msg(state[STATE_KEY_R],
-                            state[STATE_KEY_G], state[STATE_KEY_B])
+        publish_state(state)
 
 
 if __name__ == '__main__':
+    logging.basicConfig(format='[%(asctime)s][%(processName)s][%(threadName)s][%(name)s] %(levelname)5s: %(message)s',
+                        filename='application.log', encoding='utf-8', level=logging.DEBUG)
+
+    logging.info("Application Start")
     # Create NeoPixel object with appropriate configuration.
-    strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ,
-                       LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
+    strip = PixelStrip(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     # Initialize the library (must be called once before other functions).
     strip.begin()
     # Wipe on init.

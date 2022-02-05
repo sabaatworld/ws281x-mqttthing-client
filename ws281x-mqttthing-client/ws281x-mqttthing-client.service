@@ -1,0 +1,13 @@
+[Unit]
+Description=ws281x-mqttthing-client
+After=multi-user.target
+
+[Service]
+Type=idle
+WorkingDirectory=/home/pi/ws281x-mqttthing-client
+ExecStart=/usr/bin/python3 /home/pi/ws281x-mqttthing-client/application.py
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

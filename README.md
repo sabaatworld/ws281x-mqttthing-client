@@ -6,7 +6,7 @@ Python code for controlling ws281x LED strip in Homebridge using [mqttthing](htt
 
 Here's a sample "Light bulb - RGB" configuration that is used in conjunction with this code to expose the RGB lightstrip to HomeKit.
 
-```
+```json
 {
     "type": "lightbulb-RGB",
     "name": "TV Ambilight",
@@ -24,6 +24,31 @@ Here's a sample "Light bulb - RGB" configuration that is used in conjunction wit
     "confirmationIndicateOffline": true,
     "accessory": "mqttthing"
 }
+```
+
+## Developer Instructions
+
+**Install Requirements**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+**Freeze Requirements**
+```bash
+pip freeze > requirements.txt
+```
+
+**Install as Service**
+```bash
+./install.sh
+```
+
+**View Serivce Logs**
+```bash
+journalctl -u ws281x-mqttthing-client.service    # All Logs
+journalctl -u ws281x-mqttthing-client.service -b # Logs for current boot
 ```
 
 ## Useful Documentation
