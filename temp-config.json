@@ -1,0 +1,35 @@
+{
+    "type": "lightbulb",
+    "name": "Media Ambilight",
+    "mqttPubOptions": {
+        "retain": false
+    },
+    "logMqtt": true,
+    "optimizePublishing": false,
+    "topics": {
+        "getOn": "rpi-0-w/tv-ambilight/getOn",
+        "setOn": "rpi-0-w/tv-ambilight/setOn",
+        "getHue": "rpi-0-w/tv-ambilight/getH",
+        "setHue": "rpi-0-w/tv-ambilight/setH",
+        "getSaturation": "rpi-0-w/tv-ambilight/getS",
+        "setSaturation": "rpi-0-w/tv-ambilight/setS",
+        "getBrightness": "rpi-0-w/tv-ambilight/getV",
+        "setBrightness": "rpi-0-w/tv-ambilight/setV",
+        "getColorTemperature": "rpi-0-w/tv-ambilight/getCT",
+        "setColorTemperature": "rpi-0-w/tv-ambilight/setCT"
+    },
+    "startPub": [
+        {
+            "topic": "rpi-0-w/tv-ambilight/startup",
+            "message": "ready"
+        }
+    ],
+    "confirmationIndicateOffline": true,
+    "minColorTemperature": 154,
+    "maxColorTemperature": 1000,
+    "_bridge": {
+        "username": "0E:8E:2B:2B:06:DA",
+        "port": 41191
+    },
+    "accessory": "mqttthing"
+}
