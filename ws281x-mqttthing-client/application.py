@@ -106,6 +106,7 @@ def on_message(client, userdata, msg):
     if msg.topic == STARTUP_TOPIC:
         logging.debug("Received Stratup: " + str(msg.payload))
         ingore_rgb_msg = True
+        publish_state(read_state())
 
     if msg.topic == SET_ON_TOPIC:
         logging.debug("Received SetON: " + str(msg.payload))
